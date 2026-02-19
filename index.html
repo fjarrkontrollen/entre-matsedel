@@ -79,6 +79,7 @@ function loadCSV() {
   xhr.send();
 }
 
+
 function parseCSV(data) {
 
   var rows = data.trim().split("\n");
@@ -86,22 +87,23 @@ function parseCSV(data) {
 
   for (var i = 1; i < rows.length; i++) {
 
-    var cols = rows[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
-    if (!cols) continue;
+    var cols = rows[i].split(",");
 
-    for (var c = 0; c < cols.length; c++) {
-      cols[c] = cols[c].replace(/^"|"$/g, '');
-    }
+    if (!cols || cols.length < 3) continue;
 
-    if (cols[0].trim() === today) {
+    var rowDate = cols[0].trim();
+    var mainMeal = cols[1].trim();
+    var altMeal = cols[2].trim();
+
+    if (rowDate === today) {
 
       document.getElementById("output").innerHTML =
         "<div class='container'>" +
         "<div class='date'>" + formatDateSwedish(new Date()) + "</div>" +
         "<div class='title'>Matsedel:</div>" +
         "<div class='meals-wrapper'>" +
-        "<div class='meal'>" + cols[1] + "</div>" +
-        "<div class='meal'>" + cols[2] + "</div>" +
+        "<div class='meal'>" + mainMeal + "</div>" +
+        "<div class='meal'>" + altMeal + "</div>" +
         "</div>" +
         "</div>";
 
@@ -111,6 +113,8 @@ function parseCSV(data) {
     }
   }
 }
+
+  
 
 function autoResizeText() {
 
