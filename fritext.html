@@ -30,8 +30,9 @@
     line-height: 1.4;
   }
 
-  .content p {
-    margin-bottom: 20px;
+  .error {
+    font-size: 28px;
+    color: #EF4444;
   }
 </style>
 </head>
@@ -43,40 +44,69 @@
 
 <script>
 
+// ⚠ ERSÄTT MED DIN RIKTIGA PUBLICERADE LÄNK
 var docUrl = "https://docs.google.com/document/d/e/2PACX-1vRi6AfutMEZYzAO_rzcvwLyGaQLGPqrnj0EdU0shqgb6RveZDo12WS3OmTiIL6WPJWYbb3uGwho93o9/pub";
 
 function loadDoc() {
+  if (docUrl.indexOf("http") !== 0) {
+    document.getElementById("text").innerHTML =
+      "<div class='error'>Ingen giltig Google Docs-länk angiven.</div>";
+    fadeIn();
+    return;
+  }
+
   var xhr = new XMLHttpRequest();
   xhr.open("GET", docUrl, true);
+
   xhr.onreadystatechange = function() {
-    if (xhr.readyState === 4 && xhr.status === 200) {
-      parseDoc(xhr.responseText);
+    if (xhr.readyState === 4) {
+      if (xhr.status === 200) {
+        parseDoc(xhr.responseText);
+      } else {
+        document.getElementById("text").innerHTML =
+          "<div class='error'>Kunde inte hämta dokumentet.</div>";
+        fadeIn();
+      }
     }
   };
+
   xhr.send();
 }
 
 function parseDoc(html) {
+  try {
+    var parser = new DOMParser();
+    var doc = parser.parseFromString(html, "text/html");
 
-  var parser = new DOMParser();
-  var doc = parser.parseFromString(html, "text/html");
+    var paragraphs = doc.querySelectorAll("p");
 
-  var contentDiv = doc.querySelector("body");
+    if (!paragraphs.length) {
+      document.getElementById("text").innerHTML =
+        "<div class='error'>Inget innehåll hittades i dokumentet.</div>";
+      fadeIn();
+      return;
+    }
 
-  // Plocka ut alla <p>-element
-  var paragraphs = contentDiv.querySelectorAll("p");
+    var cleanedHTML = "";
 
-  var cleanedHTML = "";
+    for (var i = 0; i < paragraphs.length; i++) {
+      cleanedHTML += "<p>" + paragraphs[i].innerHTML + "</p>";
+    }
 
-  for (var i = 0; i < paragraphs.length; i++) {
-    cleanedHTML += "<p>" + paragraphs[i].innerHTML + "</p>";
+    document.getElementById("text").innerHTML = cleanedHTML;
+  }
+  catch (e) {
+    document.getElementById("text").innerHTML =
+      "<div class='error'>Fel vid tolkning av dokument.</div>";
   }
 
-  document.getElementById("text").innerHTML = cleanedHTML;
+  fadeIn();
+}
 
+function fadeIn() {
   setTimeout(function() {
     document.body.style.opacity = 1;
-  }, 9000);
+  }, 8000);
 }
 
 loadDoc();
