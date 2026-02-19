@@ -20,16 +20,14 @@
   }
 
   .container {
-    max-width: 900px;
-    max-height: 480px; /* Justera efter din ruta */
-    overflow: hidden;
+    width: 900px;
   }
 
   .date {
     font-size: 36px;
     font-weight: 500;
     color: #D1D5DB;
-    margin-bottom: 40px;
+    margin-bottom: 20px;
   }
 
   .title {
@@ -39,19 +37,20 @@
     margin-bottom: 25px;
   }
 
+  .meals-wrapper {
+    height: 450px;   /* JUSTERA ENDAST DENNA */
+    overflow: hidden;
+  }
+
   .meal {
     font-size: 48px;
     font-weight: 500;
     color: #E5E7EB;
     line-height: 1.2;
-    margin-bottom: 12px;
-    transition: font-size 0.2s ease;
+    margin-bottom: 15px;
+    word-break: break-word;
   }
 
-  .fallback {
-    font-size: 36px;
-    color: #D1D5DB;
-  }
 </style>
 </head>
 
@@ -66,7 +65,6 @@ var csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTv0TPMhZnKEg0SkHf
 function formatDateSwedish(date) {
   var weekdays = ["Söndag","Måndag","Tisdag","Onsdag","Torsdag","Fredag","Lördag"];
   var months = ["Januari","Februari","Mars","April","Maj","Juni","Juli","Augusti","September","Oktober","November","December"];
-
   return weekdays[date.getDay()] + " " + date.getDate() + " " + months[date.getMonth()];
 }
 
@@ -82,55 +80,53 @@ function loadCSV() {
 }
 
 function parseCSV(data) {
+
   var rows = data.trim().split("\n");
   var today = new Date().toISOString().split("T")[0];
 
   for (var i = 1; i < rows.length; i++) {
-    var cols = rows[i].split(",");
-    var rowDate = cols[0].trim();
 
-    if (rowDate === today) {
+    var cols = rows[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
+    if (!cols) continue;
+
+    for (var c = 0; c < cols.length; c++) {
+      cols[c] = cols[c].replace(/^"|"$/g, '');
+    }
+
+    if (cols[0].trim() === today) {
 
       document.getElementById("output").innerHTML =
         "<div class='container'>" +
         "<div class='date'>" + formatDateSwedish(new Date()) + "</div>" +
         "<div class='title'>Matsedel:</div>" +
-        "<div class='meal'>" + cols[1].trim() + "</div>" +
-        "<div class='meal'>" + cols[2].trim() + "</div>" +
+        "<div class='meals-wrapper'>" +
+        "<div class='meal'>" + cols[1] + "</div>" +
+        "<div class='meal'>" + cols[2] + "</div>" +
+        "</div>" +
         "</div>";
 
-      autoResizeText();
+      setTimeout(autoResizeText, 50);
       fadeIn();
       return;
     }
   }
-
-  document.getElementById("output").innerHTML =
-    "<div class='container'>" +
-    "<div class='fallback'>Ingen matsedel registrerad idag.</div>" +
-    "</div>";
-
-  fadeIn();
 }
 
 function autoResizeText() {
-  var container = document.querySelector('.container');
+
+  var wrapper = document.querySelector('.meals-wrapper');
   var meals = document.querySelectorAll('.meal');
 
-  var maxHeight = container.clientHeight;
-  var currentHeight = container.scrollHeight;
+  var fontSize = 48;
+  var minFontSize = 26;
 
-  var fontSize = 38;
-  var minFontSize = 12;
+  while (wrapper.scrollHeight > wrapper.clientHeight && fontSize > minFontSize) {
 
-  while (currentHeight > maxHeight && fontSize > minFontSize) {
-    fontSize -= 2;
+    fontSize -= 1;
 
     for (var i = 0; i < meals.length; i++) {
       meals[i].style.fontSize = fontSize + "px";
     }
-
-    currentHeight = container.scrollHeight;
   }
 }
 
