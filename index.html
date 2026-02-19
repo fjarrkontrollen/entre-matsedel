@@ -21,6 +21,8 @@
 
   .container {
     max-width: 900px;
+    max-height: 700px; /* Justera efter din ruta */
+    overflow: hidden;
   }
 
   .date {
@@ -43,6 +45,7 @@
     color: #E5E7EB;
     line-height: 1.2;
     margin-bottom: 12px;
+    transition: font-size 0.2s ease;
   }
 
   .fallback {
@@ -58,39 +61,13 @@
 
 <script>
 
-var csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTv0TPMhZnKEg0SkHfRx7-s8XiITehnj6o_fYQm4YqNY1zxvmnEElzleBI_Q3eAG-mt8AyIdk3Qiwc6/pub?output=csv";
+var csvUrl = "DIN_CSV_LÄNK_HÄR";
 
 function formatDateSwedish(date) {
-  var weekdays = [
-    "Söndag",
-    "Måndag",
-    "Tisdag",
-    "Onsdag",
-    "Torsdag",
-    "Fredag",
-    "Lördag"
-  ];
+  var weekdays = ["Söndag","Måndag","Tisdag","Onsdag","Torsdag","Fredag","Lördag"];
+  var months = ["Januari","Februari","Mars","April","Maj","Juni","Juli","Augusti","September","Oktober","November","December"];
 
-  var months = [
-    "Januari",
-    "Februari",
-    "Mars",
-    "April",
-    "Maj",
-    "Juni",
-    "Juli",
-    "Augusti",
-    "September",
-    "Oktober",
-    "November",
-    "December"
-  ];
-
-  var weekday = weekdays[date.getDay()];
-  var day = date.getDate();
-  var month = months[date.getMonth()];
-
-  return weekday + " " + day + " " + month;
+  return weekdays[date.getDay()] + " " + date.getDate() + " " + months[date.getMonth()];
 }
 
 function loadCSV() {
@@ -122,6 +99,7 @@ function parseCSV(data) {
         "<div class='meal'>" + cols[2].trim() + "</div>" +
         "</div>";
 
+      autoResizeText();
       fadeIn();
       return;
     }
@@ -129,11 +107,31 @@ function parseCSV(data) {
 
   document.getElementById("output").innerHTML =
     "<div class='container'>" +
-    "<div class='date'>" + formatDateSwedish(new Date()) + "</div>" +
     "<div class='fallback'>Ingen matsedel registrerad idag.</div>" +
     "</div>";
 
   fadeIn();
+}
+
+function autoResizeText() {
+  var container = document.querySelector('.container');
+  var meals = document.querySelectorAll('.meal');
+
+  var maxHeight = container.clientHeight;
+  var currentHeight = container.scrollHeight;
+
+  var fontSize = 48;
+  var minFontSize = 28;
+
+  while (currentHeight > maxHeight && fontSize > minFontSize) {
+    fontSize -= 2;
+
+    for (var i = 0; i < meals.length; i++) {
+      meals[i].style.fontSize = fontSize + "px";
+    }
+
+    currentHeight = container.scrollHeight;
+  }
 }
 
 function fadeIn() {
