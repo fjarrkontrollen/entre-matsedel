@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<title>Matsedel</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  body {
+    margin: 0;
+    background: transparent;
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    align-items: center;
+    height: 100vh;
+    padding-left: 80px;
+    opacity: 0;
+    transition: opacity 1.5s ease;
+  }
+
+  .container {
+    max-width: 900px;
+  }
+
+  .date {
+    font-size: 36px;
+    font-weight: 500;
+    color: #D1D5DB;
+    margin-bottom: 40px;
+  }
+
+  .title {
+    font-size: 32px;
+    font-weight: 500;
+    color: #D1D5DB;
+    margin-bottom: 25px;
+  }
+
+  .meal {
+    font-size: 48px;
+    font-weight: 500;
+    color: #E5E7EB;
+    line-height: 1.2;
+    margin-bottom: 12px;
+  }
+
+  .fallback {
+    font-size: 36px;
+    color: #D1D5DB;
+  }
+</style>
+</head>
+
+<body>
+
+<div id="output">Laddar...</div>
+
+<script>
+
+var csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTv0TPMhZnKEg0SkHfRx7-s8XiITehnj6o_fYQm4YqNY1zxvmnEElzleBI_Q3eAG-mt8AyIdk3Qiwc6/pub?output=csv";
+
+function formatDateSwedish(date) {
+  var weekdays = [
+    "Söndag",
+    "Måndag",
+    "Tisdag",
+    "Onsdag",
+    "Torsdag",
+    "Fredag",
+    "Lördag"
+  ];
+
+  var months = [
+    "Januari",
+    "Februari",
+    "Mars",
+    "April",
+    "Maj",
+    "Juni",
+    "Juli",
+    "Augusti",
+    "September",
+    "Oktober",
+    "November",
+    "December"
+  ];
+
+  var weekday = weekdays[date.getDay()];
+  var day = date.getDate();
+  var month = months[date.getMonth()];
+
+  return weekday + " " + day + " " + month;
+}
+
+function loadCSV() {
+  var xhr = new XMLHttpRequest();
+  xhr.open("GET", csvUrl, true);
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState === 4 && xhr.status === 200) {
+      parseCSV(xhr.responseText);
+    }
+  };
+  xhr.send();
+}
+
+function parseCSV(data) {
+  var rows = data.trim().split("\n");
+  var today = new Date().toISOString().split("T")[0];
+
+  for (var i = 1; i < rows.length; i++) {
+    var cols = rows[i].split(",");
+    var rowDate = cols[0].trim();
+
+    if (rowDate === today) {
+
+      document.getElementById("output").innerHTML =
+        "<div class='container'>" +
+        "<div class='date'>" + formatDateSwedish(new Date()) + "</div>" +
+        "<div class='title'>Matsedel:</div>" +
+        "<div class='meal'>" + cols[1].trim() + "</div>" +
+        "<div class='meal'>" + cols[2].trim() + "</div>" +
+        "</div>";
+
+      fadeIn();
+      return;
+    }
+  }
+
+  document.getElementById("output").innerHTML =
+    "<div class='container'>" +
+    "<div class='date'>" + formatDateSwedish(new Date()) + "</div>" +
+    "<div class='fallback'>Ingen matsedel registrerad idag.</div>" +
+    "</div>";
+
+  fadeIn();
+}
+
+function fadeIn() {
+  setTimeout(function() {
+    document.body.style.opacity = 1;
+  }, 12000);
+}
+
+loadCSV();
+
+</script>
+
+</body>
+</html>
