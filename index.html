@@ -7,38 +7,39 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
 <style>
+
   body {
     margin: 0;
     background: transparent;
     font-family: 'Inter', sans-serif;
-    display: flex;
-    align-items: center;
-    height: 100vh;
     padding-left: 80px;
+    padding-top: 40px;   /* Justera vertikal position här */
     opacity: 0;
     transition: opacity 1.5s ease;
   }
 
   .container {
     width: 900px;
+    height: 520px;     /* 🔥 MATCHA DIN GLASRUTA HÄR */
+    overflow: hidden;
   }
 
   .date {
     font-size: 36px;
     font-weight: 500;
     color: #D1D5DB;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
   }
 
   .title {
     font-size: 32px;
     font-weight: 500;
     color: #D1D5DB;
-    margin-bottom: 25px;
+    margin-bottom: 20px;
   }
 
   .meals-wrapper {
-    height: 380px;   /* JUSTERA ENDAST DENNA */
+    height: 280px;   /* 🔥 Justera om textdelen ska vara mindre */
     overflow: hidden;
   }
 
@@ -79,7 +80,6 @@ function loadCSV() {
   xhr.send();
 }
 
-
 function parseCSV(data) {
 
   var rows = data.trim().split("\n");
@@ -99,12 +99,12 @@ function parseCSV(data) {
 
       document.getElementById("output").innerHTML =
         "<div class='container'>" +
-        "<div class='date'>" + formatDateSwedish(new Date()) + "</div>" +
-        "<div class='title'>Matsedel:</div>" +
-        "<div class='meals-wrapper'>" +
-        "<div class='meal'>" + mainMeal + "</div>" +
-        "<div class='meal'>" + altMeal + "</div>" +
-        "</div>" +
+          "<div class='date'>" + formatDateSwedish(new Date()) + "</div>" +
+          "<div class='title'>Matsedel:</div>" +
+          "<div class='meals-wrapper'>" +
+            "<div class='meal'>" + mainMeal + "</div>" +
+            "<div class='meal'>" + altMeal + "</div>" +
+          "</div>" +
         "</div>";
 
       setTimeout(autoResizeText, 50);
@@ -114,15 +114,13 @@ function parseCSV(data) {
   }
 }
 
-  
-
 function autoResizeText() {
 
   var wrapper = document.querySelector('.meals-wrapper');
   var meals = document.querySelectorAll('.meal');
 
   var fontSize = 48;
-  var minFontSize = 16;
+  var minFontSize = 20;
 
   while (wrapper.scrollHeight > wrapper.clientHeight && fontSize > minFontSize) {
 
