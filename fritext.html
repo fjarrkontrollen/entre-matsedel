@@ -28,7 +28,10 @@
     font-weight: 400;
     color: #E5E7EB;
     line-height: 1.4;
-    white-space: pre-wrap;
+  }
+
+  .content p {
+    margin-bottom: 20px;
   }
 </style>
 </head>
@@ -40,7 +43,7 @@
 
 <script>
 
-var docUrl = "https://docs.google.com/document/d/e/2PACX-1vRi6AfutMEZYzAO_rzcvwLyGaQLGPqrnj0EdU0shqgb6RveZDo12WS3OmTiIL6WPJWYbb3uGwho93o9/pub";
+var docUrl = "KListra in din publicerade Google Docs-länk här";
 
 function loadDoc() {
   var xhr = new XMLHttpRequest();
@@ -58,18 +61,22 @@ function parseDoc(html) {
   var parser = new DOMParser();
   var doc = parser.parseFromString(html, "text/html");
 
-  var paragraphs = doc.querySelectorAll("p");
-  var textContent = "";
+  var contentDiv = doc.querySelector("body");
+
+  // Plocka ut alla <p>-element
+  var paragraphs = contentDiv.querySelectorAll("p");
+
+  var cleanedHTML = "";
 
   for (var i = 0; i < paragraphs.length; i++) {
-    textContent += paragraphs[i].innerText + "\n\n";
+    cleanedHTML += "<p>" + paragraphs[i].innerHTML + "</p>";
   }
 
-  document.getElementById("text").innerText = textContent.trim();
+  document.getElementById("text").innerHTML = cleanedHTML;
 
   setTimeout(function() {
     document.body.style.opacity = 1;
-  }, 8000); // matcha animation
+  }, 8000);
 }
 
 loadDoc();
