@@ -29,12 +29,10 @@
     color: #E5E7EB;
   }
 
-  /* Ta bort Googles vita bakgrund */
   .content * {
     background: transparent !important;
   }
 
-  /* Ta bort margin-top som Google ofta lägger */
   .content p {
     margin: 0 0 20px 0;
   }
@@ -67,9 +65,17 @@ function renderDoc(html) {
   var parser = new DOMParser();
   var doc = parser.parseFromString(html, "text/html");
 
-  var bodyContent = doc.body.innerHTML;
+  // Plocka ENDAST dokumentets innehåll
+  var contentDiv = doc.querySelector("#contents");
 
-  document.getElementById("text").innerHTML = bodyContent;
+  if (!contentDiv) {
+    document.getElementById("text").innerHTML =
+      "Kunde inte hitta dokumentinnehåll.";
+    fadeIn();
+    return;
+  }
+
+  document.getElementById("text").innerHTML = contentDiv.innerHTML;
 
   fadeIn();
 }
