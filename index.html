@@ -7,19 +7,20 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
 <style>
+
   body {
     margin: 0;
     background: transparent;
     font-family: 'Inter', sans-serif;
     padding-left: 80px;
-    padding-top: 40px;
+    padding-top: 40px;   /* Justera vertikal position här */
     opacity: 0;
-    transition: opacity 1.2s ease;
+    transition: opacity 1.5s ease;
   }
 
   .container {
     width: 900px;
-    height: 520px;
+    height: 520px;     /* 🔥 MATCHA DIN GLASRUTA HÄR */
     overflow: hidden;
   }
 
@@ -38,7 +39,7 @@
   }
 
   .meals-wrapper {
-    height: 280px;
+    height: 280px;   /* 🔥 Justera om textdelen ska vara mindre */
     overflow: hidden;
   }
 
@@ -51,10 +52,6 @@
     word-break: break-word;
   }
 
-  .error {
-    font-size: 36px;
-    color: #F87171;
-  }
 </style>
 </head>
 
@@ -64,184 +61,83 @@
 
 <script>
 
-const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTv0TPMhZnKEg0SkHfRx7-s8XiITehnj6o_fYQm4YqNY1zxvmnEElzleBI_Q3eAG-mt8AyIdk3Qiwc6/pub?output=csv";
-
-/* ================================
-   Hjälpfunktioner
-================================ */
-
-// Svenskt datum (lokal tid)
-function getTodayString() {
-  const now = new Date();
-  return now.getFullYear() + "-" +
-    String(now.getMonth() + 1).padStart(2, '0') + "-" +
-    String(now.getDate()).padStart(2, '0');
-}
+var csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTv0TPMhZnKEg0SkHfRx7-s8XiITehnj6o_fYQm4YqNY1zxvmnEElzleBI_Q3eAG-mt8AyIdk3Qiwc6/pub?output=csv";
 
 function formatDateSwedish(date) {
-  const weekdays = ["Söndag","Måndag","Tisdag","Onsdag","Torsdag","Fredag","Lördag"];
-  const months = ["Januari","Februari","Mars","April","Maj","Juni","Juli","Augusti","September","Oktober","November","December"];
+  var weekdays = ["Söndag","Måndag","Tisdag","Onsdag","Torsdag","Fredag","Lördag"];
+  var months = ["Januari","Februari","Mars","April","Maj","Juni","Juli","Augusti","September","Oktober","November","December"];
   return weekdays[date.getDay()] + " " + date.getDate() + " " + months[date.getMonth()];
 }
 
-// Säker text (skydd mot HTML-injection)
-function escapeHTML(str) {
-  return str.replace(/[&<>"']/g, function(match) {
-    const escape = {
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#39;'
-    };
-    return escape[match];
-  });
-}
-
-/* ================================
-   Robust CSV-parser
-================================ */
-
-// Klarar:
-/// - Komma
-// - Semikolon
-// - Citattecken
-// - Kommatecken i text
-
-function parseCSVLine(line) {
-
-  const result = [];
-  let current = '';
-  let insideQuotes = false;
-  let separator = null;
-
-  // Auto-detect separator första gången
-  if (line.includes(";") && line.includes(",")) {
-    separator = ",";
-  } else if (line.includes(";")) {
-    separator = ";";
-  } else {
-    separator = ",";
-  }
-
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-
-    if (char === '"') {
-      insideQuotes = !insideQuotes;
-      continue;
-    }
-
-    if (!insideQuotes && char === separator) {
-      result.push(current.trim());
-      current = '';
-      continue;
-    }
-
-    current += char;
-  }
-
-  result.push(current.trim());
-  return result;
-}
-
-/* ================================
-   Ladda CSV
-================================ */
-
 function loadCSV() {
-
-  fetch(csvUrl)
-    .then(response => {
-      if (!response.ok) throw new Error("CSV kunde inte hämtas.");
-      return response.text();
-    })
-    .then(data => processCSV(data))
-    .catch(err => showError("Kunde inte ladda matsedel."));
+  var xhr = new XMLHttpRequest();
+  xhr.open("GET", csvUrl, true);
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState === 4 && xhr.status === 200) {
+      parseCSV(xhr.responseText);
+    }
+  };
+  xhr.send();
 }
 
-function processCSV(data) {
+function parseCSV(data) {
 
-  const rows = data.trim().split("\n");
-  const todayStr = getTodayString();
-  const todayDate = new Date();
+  var rows = data.trim().split("\n");
+  var today = new Date().toISOString().split("T")[0];
 
-  for (let i = 1; i < rows.length; i++) {
+  for (var i = 1; i < rows.length; i++) {
 
-    const cols = parseCSVLine(rows[i]);
+    // Robust split som hanterar kommatecken inom citattecken
+    var cols = rows[i].match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g);
+
     if (!cols || cols.length < 3) continue;
 
-    const rowDate = cols[0];
-    const mainMeal = cols[1];
-    const altMeal = cols[2];
+    var rowDate = cols[0].replace(/^"|"$/g, '').trim();
+    var mainMeal = cols[1].replace(/^"|"$/g, '').trim();
+    var altMeal = cols[2].replace(/^"|"$/g, '').trim();
 
-    if (rowDate === todayStr) {
+    if (rowDate === today) {
 
-      renderMenu(todayDate, mainMeal, altMeal);
+      document.getElementById("output").innerHTML =
+        "<div class='container'>" +
+          "<div class='date'>" + formatDateSwedish(new Date()) + "</div>" +
+          "<div class='title'>Matsedel:</div>" +
+          "<div class='meals-wrapper'>" +
+            "<div class='meal'>" + mainMeal + "</div>" +
+            "<div class='meal'>" + altMeal + "</div>" +
+          "</div>" +
+        "</div>";
+
+      setTimeout(autoResizeText, 50);
+      fadeIn();
       return;
     }
   }
-
-  showError("Ingen matsedel publicerad för idag.");
 }
-
-/* ================================
-   Render
-================================ */
-
-function renderMenu(dateObj, mainMeal, altMeal) {
-
-  document.getElementById("output").innerHTML =
-    "<div class='container'>" +
-      "<div class='date'>" + formatDateSwedish(dateObj) + "</div>" +
-      "<div class='title'>Matsedel</div>" +
-      "<div class='meals-wrapper'>" +
-        "<div class='meal'>" + escapeHTML(mainMeal) + "</div>" +
-        "<div class='meal'>" + escapeHTML(altMeal) + "</div>" +
-      "</div>" +
-    "</div>";
-
-  setTimeout(autoResizeText, 50);
-  fadeIn();
-}
-
-function showError(message) {
-  document.getElementById("output").innerHTML =
-    "<div class='container'>" +
-      "<div class='error'>" + message + "</div>" +
-    "</div>";
-  fadeIn();
-}
-
-/* ================================
-   Auto resize
-================================ */
 
 function autoResizeText() {
 
-  const wrapper = document.querySelector('.meals-wrapper');
-  const meals = document.querySelectorAll('.meal');
+  var wrapper = document.querySelector('.meals-wrapper');
+  var meals = document.querySelectorAll('.meal');
 
-  let fontSize = 48;
-  const minFontSize = 22;
+  var fontSize = 48;
+  var minFontSize = 20;
 
   while (wrapper.scrollHeight > wrapper.clientHeight && fontSize > minFontSize) {
-    fontSize--;
-    meals.forEach(m => m.style.fontSize = fontSize + "px");
+
+    fontSize -= 1;
+
+    for (var i = 0; i < meals.length; i++) {
+      meals[i].style.fontSize = fontSize + "px";
+    }
   }
 }
 
-/* ================================
-   Fade in
-================================ */
-
 function fadeIn() {
-  document.body.style.opacity = 1;
+  setTimeout(function() {
+    document.body.style.opacity = 1;
+  }, 9000);
 }
-
-/* ================================
-   Start
-================================ */
 
 loadCSV();
 
