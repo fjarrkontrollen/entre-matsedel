@@ -7,20 +7,19 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
 <style>
-
   body {
     margin: 0;
     background: transparent;
     font-family: 'Inter', sans-serif;
     padding-left: 80px;
-    padding-top: 40px;   /* Justera vertikal position här */
+    padding-top: 40px;
     opacity: 0;
-    transition: opacity 1.5s ease;
+    transition: opacity 1.2s ease;
   }
 
   .container {
     width: 900px;
-    height: 520px;     /* 🔥 MATCHA DIN GLASRUTA HÄR */
+    height: 520px;
     overflow: hidden;
   }
 
@@ -39,7 +38,7 @@
   }
 
   .meals-wrapper {
-    height: 280px;   /* 🔥 Justera om textdelen ska vara mindre */
+    height: 280px;
     overflow: hidden;
   }
 
@@ -52,6 +51,10 @@
     word-break: break-word;
   }
 
+  .error {
+    font-size: 36px;
+    color: #F87171;
+  }
 </style>
 </head>
 
@@ -61,82 +64,184 @@
 
 <script>
 
-var csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTv0TPMhZnKEg0SkHfRx7-s8XiITehnj6o_fYQm4YqNY1zxvmnEElzleBI_Q3eAG-mt8AyIdk3Qiwc6/pub?output=csv";
+const csvUrl = "DIN_CSV_URL_HÄR";
+
+/* ================================
+   Hjälpfunktioner
+================================ */
+
+// Svenskt datum (lokal tid)
+function getTodayString() {
+  const now = new Date();
+  return now.getFullYear() + "-" +
+    String(now.getMonth() + 1).padStart(2, '0') + "-" +
+    String(now.getDate()).padStart(2, '0');
+}
 
 function formatDateSwedish(date) {
-  var weekdays = ["Söndag","Måndag","Tisdag","Onsdag","Torsdag","Fredag","Lördag"];
-  var months = ["Januari","Februari","Mars","April","Maj","Juni","Juli","Augusti","September","Oktober","November","December"];
+  const weekdays = ["Söndag","Måndag","Tisdag","Onsdag","Torsdag","Fredag","Lördag"];
+  const months = ["Januari","Februari","Mars","April","Maj","Juni","Juli","Augusti","September","Oktober","November","December"];
   return weekdays[date.getDay()] + " " + date.getDate() + " " + months[date.getMonth()];
 }
 
-function loadCSV() {
-  var xhr = new XMLHttpRequest();
-  xhr.open("GET", csvUrl, true);
-  xhr.onreadystatechange = function() {
-    if (xhr.readyState === 4 && xhr.status === 200) {
-      parseCSV(xhr.responseText);
-    }
-  };
-  xhr.send();
+// Säker text (skydd mot HTML-injection)
+function escapeHTML(str) {
+  return str.replace(/[&<>"']/g, function(match) {
+    const escape = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    };
+    return escape[match];
+  });
 }
 
-function parseCSV(data) {
+/* ================================
+   Robust CSV-parser
+================================ */
 
-  var rows = data.trim().split("\n");
-  var today = new Date().toISOString().split("T")[0];
+// Klarar:
+/// - Komma
+// - Semikolon
+// - Citattecken
+// - Kommatecken i text
 
-  for (var i = 1; i < rows.length; i++) {
+function parseCSVLine(line) {
 
-    var cols = rows[i].split(",");
+  const result = [];
+  let current = '';
+  let insideQuotes = false;
+  let separator = null;
 
+  // Auto-detect separator första gången
+  if (line.includes(";") && line.includes(",")) {
+    separator = ",";
+  } else if (line.includes(";")) {
+    separator = ";";
+  } else {
+    separator = ",";
+  }
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+
+    if (char === '"') {
+      insideQuotes = !insideQuotes;
+      continue;
+    }
+
+    if (!insideQuotes && char === separator) {
+      result.push(current.trim());
+      current = '';
+      continue;
+    }
+
+    current += char;
+  }
+
+  result.push(current.trim());
+  return result;
+}
+
+/* ================================
+   Ladda CSV
+================================ */
+
+function loadCSV() {
+
+  fetch(csvUrl)
+    .then(response => {
+      if (!response.ok) throw new Error("CSV kunde inte hämtas.");
+      return response.text();
+    })
+    .then(data => processCSV(data))
+    .catch(err => showError("Kunde inte ladda matsedel."));
+}
+
+function processCSV(data) {
+
+  const rows = data.trim().split("\n");
+  const todayStr = getTodayString();
+  const todayDate = new Date();
+
+  for (let i = 1; i < rows.length; i++) {
+
+    const cols = parseCSVLine(rows[i]);
     if (!cols || cols.length < 3) continue;
 
-    var rowDate = cols[0].trim();
-    var mainMeal = cols[1].trim();
-    var altMeal = cols[2].trim();
+    const rowDate = cols[0];
+    const mainMeal = cols[1];
+    const altMeal = cols[2];
 
-    if (rowDate === today) {
+    if (rowDate === todayStr) {
 
-      document.getElementById("output").innerHTML =
-        "<div class='container'>" +
-          "<div class='date'>" + formatDateSwedish(new Date()) + "</div>" +
-          "<div class='title'>Matsedel:</div>" +
-          "<div class='meals-wrapper'>" +
-            "<div class='meal'>" + mainMeal + "</div>" +
-            "<div class='meal'>" + altMeal + "</div>" +
-          "</div>" +
-        "</div>";
-
-      setTimeout(autoResizeText, 50);
-      fadeIn();
+      renderMenu(todayDate, mainMeal, altMeal);
       return;
     }
   }
+
+  showError("Ingen matsedel publicerad för idag.");
 }
+
+/* ================================
+   Render
+================================ */
+
+function renderMenu(dateObj, mainMeal, altMeal) {
+
+  document.getElementById("output").innerHTML =
+    "<div class='container'>" +
+      "<div class='date'>" + formatDateSwedish(dateObj) + "</div>" +
+      "<div class='title'>Matsedel</div>" +
+      "<div class='meals-wrapper'>" +
+        "<div class='meal'>" + escapeHTML(mainMeal) + "</div>" +
+        "<div class='meal'>" + escapeHTML(altMeal) + "</div>" +
+      "</div>" +
+    "</div>";
+
+  setTimeout(autoResizeText, 50);
+  fadeIn();
+}
+
+function showError(message) {
+  document.getElementById("output").innerHTML =
+    "<div class='container'>" +
+      "<div class='error'>" + message + "</div>" +
+    "</div>";
+  fadeIn();
+}
+
+/* ================================
+   Auto resize
+================================ */
 
 function autoResizeText() {
 
-  var wrapper = document.querySelector('.meals-wrapper');
-  var meals = document.querySelectorAll('.meal');
+  const wrapper = document.querySelector('.meals-wrapper');
+  const meals = document.querySelectorAll('.meal');
 
-  var fontSize = 48;
-  var minFontSize = 20;
+  let fontSize = 48;
+  const minFontSize = 22;
 
   while (wrapper.scrollHeight > wrapper.clientHeight && fontSize > minFontSize) {
-
-    fontSize -= 1;
-
-    for (var i = 0; i < meals.length; i++) {
-      meals[i].style.fontSize = fontSize + "px";
-    }
+    fontSize--;
+    meals.forEach(m => m.style.fontSize = fontSize + "px");
   }
 }
 
+/* ================================
+   Fade in
+================================ */
+
 function fadeIn() {
-  setTimeout(function() {
-    document.body.style.opacity = 1;
-  }, 12000);
+  document.body.style.opacity = 1;
 }
+
+/* ================================
+   Start
+================================ */
 
 loadCSV();
 
